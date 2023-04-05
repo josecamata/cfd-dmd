@@ -24,7 +24,7 @@ print(dmd.A.shape)
 
 Xp = X[:,0]
 for t in range(T+10):
-    Xn = dmd.A @ Xp.real
+    Xn = dmd.predict(Xp)
     Xp = Xn
 
 print(Xn.T.real)
