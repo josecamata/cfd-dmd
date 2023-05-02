@@ -21,25 +21,32 @@ class DMD(object):
         s_r   = s[:self.r]
         v_r   = v.conj().T[:,:self.r]
 
+     
+
         s_inv = np.diag(np.reciprocal(s_r))
 
         # Compute Atilde
         A_tilde = u_r.conj().T @ X2 @ v_r @ s_inv
        
         eigenvalues,eigenvectors = np.linalg.eig(A_tilde)
+
+      
         
         # Reconstruct DMD modes (phi)
         self.phi          = X2 @ v_r @ s_inv @ eigenvectors 
         self.eigenvalues  = eigenvalues
         self.eigenvectors = eigenvectors
-        self.A            = np.linalg.multi_dot([self.phi ,np.diag(self.eigenvalues), np.linalg.pinv(self.phi)])
-
+        phi_inv = np.linalg.pinv(self.phi)
+        print("apos pinv")
+        # TODO: Implementar de forma eficiente usando np.linalg
+        self.A            = self.phi @ np.diag(self.eigenvalues) @ phi_inv
+        print("apos A")
         # lambda = np.diag(self.eigenvalues)
 
-        self.omega  = np.diag(np.log(self.eigenvalues))
+        # self.omega  = np.diag(np.log(self.eigenvalues))
 
         # # Compute time evolution of DMD modes (b)
-        self.b = np.linalg.pinv(self.phi) @ X1[:,0]
+        # self.b = np.linalg.pinv(self.phi) @ X1[:,0]
 
     def predict(self, X):
         return np.dot(self.A, X)
