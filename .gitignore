@@ -128,5 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-./DATA
+DATA/*
 DATA/FLUIDS/CYLINDER_ALL.mat
