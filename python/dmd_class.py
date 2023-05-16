@@ -26,21 +26,25 @@ class DMD(object):
         s_inv = np.diag(np.reciprocal(s_r))
 
         # Compute Atilde
-        A_tilde = u_r.conj().T @ X2 @ v_r @ s_inv
+        # A_tilde = u_r.conj().T @ X2 @ v_r @ s_inv
+        A_tilde = np.linalg.multi_dot([u_r.conj().T, X2, v_r, s_inv])
        
         eigenvalues,eigenvectors = np.linalg.eig(A_tilde)
 
       
         
         # Reconstruct DMD modes (phi)
-        self.phi          = X2 @ v_r @ s_inv @ eigenvectors 
+        # self.phi          = X2 @ v_r @ s_inv @ eigenvectors 
+        self.phi          = np.linalg.multi_dot([X2, v_r, s_inv, eigenvectors])
+
         self.eigenvalues  = eigenvalues
         self.eigenvectors = eigenvectors
         phi_inv = np.linalg.pinv(self.phi)
-        print("apos pinv")
+        # print("apos pinv")
         # TODO: Implementar de forma eficiente usando np.linalg
-        self.A            = self.phi @ np.diag(self.eigenvalues) @ phi_inv
-        print("apos A")
+        # self.A            = self.phi @ np.diag(self.eigenvalues) @ phi_inv
+        self.A            = np.linalg.multi_dot([self.phi, np.diag(self.eigenvalues), phi_inv])
+        # print("apos A")
         # lambda = np.diag(self.eigenvalues)
 
         # self.omega  = np.diag(np.log(self.eigenvalues))
@@ -49,7 +53,8 @@ class DMD(object):
         # self.b = np.linalg.pinv(self.phi) @ X1[:,0]
 
     def predict(self, X):
-        return np.dot(self.A, X)
+        #  return np.dot(self.A, X)
+        return np.linalg.multi_dot([self.A, X])
     
 
     def get_n_snapshots(self):

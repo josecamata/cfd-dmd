@@ -2,10 +2,10 @@ import numpy as np
 import scipy.io 
 
 import matplotlib.pyplot as plt
-from dmd_class import DMD
+# from dmd_class import DMD
 
-# Create a DMD object
-dmd = DMD(r=2)
+from pydmd import DMD
+
 
 file_path = '../DATA/FLUIDS/CYLINDER_ALL.mat'
 mat = scipy.io.loadmat(file_path)
@@ -23,11 +23,11 @@ X = mat['UALL']
 # for i in range(n):
 #     for j in range(m):
 #         X[i, j] = j + i
+ 
 
-
-dmd = DMD()
+dmd = DMD(svd_rank=2)
 dmd.fit(X)
-# N,T = X.shape
+N,T = X.shape
   
 # print(dmd.A.shape)
 
