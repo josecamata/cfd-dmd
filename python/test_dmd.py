@@ -2,7 +2,7 @@ import numpy as np
 import scipy.io 
 
 import matplotlib.pyplot as plt
-# from dmd_class import DMD
+#from dmd_class import DMD
 
 from pydmd import DMD
 

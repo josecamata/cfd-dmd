@@ -1,33 +1,30 @@
 import numpy as np
-#from PIL import Image
+from PIL import Image
 import scipy.io as scipy
 import matplotlib.pyplot as plt
 
-im = plt.imread('imagem.png')
-print(im.shape)
+
+INPUT_DIR = '../DATA/pngs_bw/'
 
 
-#img = Image.open('imagem.png').convert('RGBA')
+im= Image.open(INPUT_DIR + 'RenderView1_0.png')
+# Convert the image into an array
+arr = np.array(im)
+shape = arr.shape
+print(shape)
+size = arr.size
+print(size)
+
+
 # print(img)
-# arr = np.array(img)
-
+arr_col = np.array(im).reshape((size,1))
+print(arr_col.shape)
 # record the original shape
 # shape = arr.shape
 
-# make a 1-dimensional view of arr
-flat_arr = im.ravel()
-print(flat_arr.shape)
 
-# convert it to a matrix
-# vector = np.matrix(flat_arr)
 
-# do something to the vector
-# vector[:,::10] = 128
-
-# reform a numpy array of the original shape
-# arr2 = np.asarray(vector).reshape(shape)
-
-# make a PIL image
-# img2 = Image.fromarray(arr2, 'RGBA')
-# img2.show()
-
+arr2 = arr_col.reshape(shape)
+# # make a PIL image
+img2 = Image.fromarray(arr2)
+img2.save('imagem2.png')

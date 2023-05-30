@@ -15,19 +15,19 @@ class DMD(object):
         X1 = X[:,:-1] 
         X2 = X[:, 1:]
 
+        X1, X2 = self.compute_tlsq(X1, X2, 1)
+
         # Compute SVD of x (uu,ss,vv)
         u,s,v = np.linalg.svd(X1,full_matrices=False)
         u_r   = u[: , :self.r]
         s_r   = s[:self.r]
         v_r   = v.conj().T[:,:self.r]
 
-     
-
-        s_inv = np.diag(np.reciprocal(s_r))
+    
 
         # Compute Atilde
         # A_tilde = u_r.conj().T @ X2 @ v_r @ s_inv
-        A_tilde = np.linalg.multi_dot([u_r.conj().T, X2, v_r, s_inv])
+        A_tilde = np.linalg.multi_dot([u_r.conj().T, X2, v_r])*np.reciprocal(s_r)
        
         eigenvalues,eigenvectors = np.linalg.eig(A_tilde)
 
@@ -35,7 +35,7 @@ class DMD(object):
         
         # Reconstruct DMD modes (phi)
         # self.phi          = X2 @ v_r @ s_inv @ eigenvectors 
-        self.phi          = np.linalg.multi_dot([X2, v_r, s_inv, eigenvectors])
+        self.phi          = np.linalg.multi_dot([X2, v_r, eigenvectors])*np.reciprocal(s_r)
 
         self.eigenvalues  = eigenvalues
         self.eigenvectors = eigenvectors
@@ -61,3 +61,14 @@ class DMD(object):
         if self.snapshots_shape is None:
             raise ValueError("snapshots_shape is None. Please fit the model first.")
         return self.snapshots_shape[1]
+    
+    def compute_tlsq(self, X, Y, tlsq_rank):
+        if(tlsq_rank == 0):
+            return X, Y
+        
+        V = np.linalg.svd(np.append(X, Y, axis=0), full_matrices=False)[-1]
+        rank = min(tlsq_rank, V.shape[0])
+        VV = V[:rank, :].conj().T.dot(V[:rank, :])
+
+        return X.dot(VV), Y.dot(VV)
+

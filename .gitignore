@@ -132,3 +132,5 @@ DATA/*
 DATA/FLUIDS/CYLINDER_ALL.mat
 pngs/
 pngs_bw/
+python/*.png
+
