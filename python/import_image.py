@@ -4,10 +4,12 @@ import scipy.io as scipy
 import matplotlib.pyplot as plt
 
 
-INPUT_DIR = '../DATA/pngs_bw/'
+INPUT_DIR = '/home/camata/git/cfd-dmd/DATA/pngs_bw/'
+
 
 
 im= Image.open(INPUT_DIR + 'RenderView1_0.png')
+
 # Convert the image into an array
 arr = np.array(im)
 shape = arr.shape
