@@ -15,7 +15,8 @@ shape = arr.shape
 print(shape)
 size = arr.size
 
-X = np.zeros((size,100))
+X    = np.zeros((size,100))
+Xpred = np.zeros((size,100))
 
 for i in range(0,100,1):
     # print("i: %d\n" % i)
@@ -32,15 +33,14 @@ dmd = DMD(svd_rank=2)
 dmd.fit(X)
 N,T = X.shape
 
-Xp = X[:,0]
-for t in range(T+2):
-    Xn = dmd.predict(Xp)
-    Xp = Xn
+Xpred[:,0] = X[:,0]
+for t in range(1,T):
+    Xpred[:,t] = dmd.predict(Xpred[:,t-1])
 
 
 
 # print(Xp)
-arr2 = Xp.reshape(shape)
+arr2 = Xpred[:,T-1].reshape(shape)
 #onvert float arrary to int array
 arr2 = arr2.astype(np.uint8)
 
