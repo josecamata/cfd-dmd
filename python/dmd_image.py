@@ -53,9 +53,9 @@ Xpred[:, 0] = X[:, 0]
 for t in range(1, T):
     Xpred[:, t] = dmd.predict(Xpred[:, t-1])
 
-for i in range(1, 100):
+for i in range(0, 100):
     arr_pred = Xpred[:, i].reshape(shape)
     arr_pred = arr_pred.astype(np.uint8)
 
     img_pred = Image.fromarray(arr_pred)
-    img_pred.save('/home/breno/cfd-dmd/imagens-preditas' + f'/imagem_predita_{i}.png')
+    img_pred.save('/home/breno/cfd-dmd/predicted_imgs' + f'/imagem_predita_{i}.png')
