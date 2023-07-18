@@ -1,4 +1,5 @@
 from PIL import Image
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 
@@ -27,6 +28,7 @@ def calculate_psnr(original_image, generated_image):
 
 original_images = []
 generated_images = []
+psnr_values = []
 
 for i in range(0, 100):
     original_images += [f"/home/breno/cfd-dmd/pngs_bw/RenderView1_{i}.png"]
@@ -37,4 +39,11 @@ for i in range(len(original_images)):
     generated_image = generated_images[i]
 
     psnr = calculate_psnr(original_image, generated_image)
-    print(f"PSNR para as imagens {original_image} e {generated_image}: {psnr} dB")
+    psnr_values.append(psnr)
+
+image_numbers = range(1, len(original_images) + 1)
+plt.plot(image_numbers, psnr_values)
+plt.xlabel('Número da Imagem')
+plt.ylabel('PSNR (dB)')
+plt.title('PSNR em função da imagem')
+plt.show()
