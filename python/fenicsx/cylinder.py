@@ -14,7 +14,7 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_vector, create_matrix, set_bc)
 from dolfinx.graph import create_adjacencylist
 from dolfinx.geometry import BoundingBoxTree, compute_collisions, compute_colliding_cells
-from dolfinx.io import (VTXWriter, distribute_entity_data, gmshio)
+from dolfinx.io import (XDMFFile,VTXWriter, distribute_entity_data, gmshio)
 from dolfinx.mesh import create_mesh, meshtags_from_entities
 
 from ufl import (FacetNormal, FiniteElement, Identity, Measure, TestFunction, TrialFunction, VectorElement,
@@ -101,11 +101,12 @@ mesh, _, ft = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank, gdim=gdim)
 ft.name = "Facet markers"
 
 t = 0
-T = 8                       # Final time
-dt = 1/1600                 # Time step size
+T = 8                        # Final time
+dt = 1/400                   # Time step size
+#dt = 1/1600                 # Time step size
 num_steps = int(T/dt)
-k = Constant(mesh, PETSc.ScalarType(dt))        
-mu = Constant(mesh, PETSc.ScalarType(0.001))  # Dynamic viscosity
+k   = Constant(mesh, PETSc.ScalarType(dt))        
+mu  = Constant(mesh, PETSc.ScalarType(0.001))  # Dynamic viscosity
 rho = Constant(mesh, PETSc.ScalarType(1))     # Density
 
 v_cg2 = VectorElement("CG", mesh.ufl_cell(), 2)
@@ -197,10 +198,14 @@ solver3.setType(PETSc.KSP.Type.CG)
 pc3 = solver3.getPC()
 pc3.setType(PETSc.PC.Type.SOR)
 
-vtx_u = VTXWriter(mesh.comm, "dfg2D-3-u.bp", [u_])
-vtx_p = VTXWriter(mesh.comm, "dfg2D-3-p.bp", [p_])
-vtx_u.write(t)
-vtx_p.write(t)
+xdmf = XDMFFile(mesh.comm, "cylinder.xdmf", "w")
+xdmf.write_mesh(mesh)
+xdmf.write_function(u_, t)
+xdmf.write_function(p_, t)
+# vtx_u = VTXWriter(mesh.comm, "dfg2D-3-u.bp", [u_])
+# vtx_p = VTXWriter(mesh.comm, "dfg2D-3-p.bp", [p_])
+# vtx_u.write(t)
+# vtx_p.write(t)
 progress = tqdm.autonotebook.tqdm(desc="Solving PDE", total=num_steps)
 for i in range(num_steps):
     progress.update(1)
@@ -244,14 +249,18 @@ for i in range(num_steps):
     solver3.solve(b3, u_.vector)
     u_.x.scatter_forward()
 
-    # Write solutions to file
-    vtx_u.write(t)
-    vtx_p.write(t)
+    # # Write solutions to file
+    # vtx_u.write(t)
+    # vtx_p.write(t)
+    xdmf.write_function(u_, t)
+    xdmf.write_function(p_, t)
 
     # Update variable with solution form this time step
     with u_.vector.localForm() as loc_, u_n.vector.localForm() as loc_n, u_n1.vector.localForm() as loc_n1:
         loc_n.copy(loc_n1)
         loc_.copy(loc_n)
 
-vtx_u.close()
-vtx_p.close()
+# vtx_u.close()
+# vtx_p.close()
+
+xdmf.close()
