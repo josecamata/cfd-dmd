@@ -15,15 +15,10 @@ for key in file_h5['/Function/u']:
 
 data_matrix = np.array(extracted_column).T  # Transpõe para obter as snapshots como colunas
 
-r = 2
-A_tilde, Phi, A, Psi = dmd.DMD(data_matrix, r)
-t_conhecido = 2.0
-
+r = 20
 delta_t = 0.0025
-pred_step = int(t_conhecido / delta_t)
 
-predictions = dmd.DMD4cast(data_matrix, r, pred_step)
-print("Dados previstos no instante de tempo t =", t_conhecido)
+predictions = dmd.DMD4cast(data_matrix, r, delta_t)
 print(predictions)
 
 # X = np.array(extracted_column).T
