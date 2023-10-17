@@ -3,72 +3,74 @@ import numpy as np
 from scipy.linalg import svd
 
 class DMD(object):
-    def __init__(self, r=2, svd_rank=0):
+    def __init__(self, r=None):
         self.r = r
+        self.A_tilde = None
+        self.phi    = None
+        self.lambda_ = None
+        self.b      = None
+        self.omega  = None
+        self.dt     = None
+        self.W      = None
+        self.n_points = None
+        self.n_snapshots = None
+        self.X0 = None
 
-    def fit(self, X):
+    def fit(self, X, thresh=0.7,dt=1.0):
 
-        n_points,n_snapshots = X.shape
-
-        self.snapshots_shape = X.shape
+        self.dt = dt
+        self.n_points,self.n_snapshots = X.shape
 
         X1 = X[:,:-1] 
         X2 = X[:, 1:]
-
-        X1, X2 = self.compute_tlsq(X1, X2, 1)
+        self.X0 = X1[:,0]
 
         # Compute SVD of x (uu,ss,vv)
-        u,s,v = np.linalg.svd(X1,full_matrices=False)
-        u_r   = u[: , :self.r]
-        s_r   = s[:self.r]
-        v_r   = v.conj().T[:,:self.r]
+        u,s,v = np.linalg.svd(X1)
+        q = np.cumsum(s) / np.sum(s)
+        mask = q > thresh
+        self.r = 2 # np.where(mask)[0][0]
 
-    
+        u_r   = u[: , :self.r].conj()
+        s_r   = np.diag(s[:self.r])
+        v_r   = v[:self.r:, ].conj().transpose()
 
+        #np.disp(u_r.real);
+        #np.disp(s_r.real);   
+        #np.disp(v_r.real);
+
+        s_inv = np.linalg.inv(s_r)
         # Compute Atilde
-        # A_tilde = u_r.conj().T @ X2 @ v_r @ s_inv
-        A_tilde = np.linalg.multi_dot([u_r.conj().T, X2, v_r])*np.reciprocal(s_r)
-       
-        eigenvalues,eigenvectors = np.linalg.eig(A_tilde)
+        self.A_tilde = u_r.T @ X2 @ v_r @ s_inv
 
-      
+        # np.disp(self.A_tilde.real)
         
-        # Reconstruct DMD modes (phi)
-        # self.phi          = X2 @ v_r @ s_inv @ eigenvectors 
-        self.phi          = np.linalg.multi_dot([X2, v_r, eigenvectors])*np.reciprocal(s_r)
+        self.lambda_ , self.W = np.linalg.eig(self.A_tilde)
 
-        self.eigenvalues  = eigenvalues
-        self.eigenvectors = eigenvectors
-        phi_inv = np.linalg.pinv(self.phi)
-        # print("apos pinv")
-        # TODO: Implementar de forma eficiente usando np.linalg
-        # self.A            = self.phi @ np.diag(self.eigenvalues) @ phi_inv
-        self.A            = np.linalg.multi_dot([self.phi, np.diag(self.eigenvalues), phi_inv])
-        # print("apos A")
-        # lambda = np.diag(self.eigenvalues)
+        # np.disp(self.lambda_.real)
+        # np.disp(self.W.real)
 
-        # self.omega  = np.diag(np.log(self.eigenvalues))
+        self.phi = X2 @ v_r @ s_inv @ self.W
 
-        # # Compute time evolution of DMD modes (b)
-        # self.b = np.linalg.pinv(self.phi) @ X1[:,0]
+        # np.disp(self.phi.real)
 
-    def predict(self, X):
-        #  return np.dot(self.A, X)
-        return np.linalg.multi_dot([self.A, X])
+        self.b = np.linalg.pinv(self.phi) @ X1[:,0]
+        self.omega = np.log(self.lambda_) / self.dt
+
+        np.disp(self.omega.real)
+
+
+    def predict_future(self, t):
+        pseudophix0 = np.linalg.pinv(self.phi) @ self.X0.reshape(-1, 1)
+        atphi = self.phi @ np.diag(self.lambda_ ** t)
+        xt = (atphi @ pseudophix0).reshape(-1)
+        return xt.real
     
-
-    def get_n_snapshots(self):
-        if self.snapshots_shape is None:
-            raise ValueError("snapshots_shape is None. Please fit the model first.")
-        return self.snapshots_shape[1]
+    def predict(self, tvalues):
+        time_dynamics = np.zeros((self.r, len(tvalues)), dtype=np.complex)
+        for i, t in enumerate(tvalues):
+            time_dynamics[:, i] = self.b * np.exp(self.omega * t)
+        xDMD = self.phi @ time_dynamics
+        return xDMD
     
-    def compute_tlsq(self, X, Y, tlsq_rank):
-        if(tlsq_rank == 0):
-            return X, Y
-        
-        V = np.linalg.svd(np.append(X, Y, axis=0), full_matrices=False)[-1]
-        rank = min(tlsq_rank, V.shape[0])
-        VV = V[:rank, :].conj().T.dot(V[:rank, :])
-
-        return X.dot(VV), Y.dot(VV)
 
