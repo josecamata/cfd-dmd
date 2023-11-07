@@ -1,4 +1,3 @@
-
 import numpy as np
 from PIL import Image
 import scipy.io 
@@ -7,19 +6,23 @@ import matplotlib.pyplot as plt
 from dmd_class import DMD
 # from pydmd import DMD
 
-INPUT_DIR = '/home/breno/cfd-dmd/pngs_bw'
+INPUT_DIR = '/home/camata/git/cfd-dmd/DATA/pngs_bw'
 # OUTPUT_DIR = '/home/breno/cfd-dmd/predicted_imgs'
 
 im= Image.open(INPUT_DIR + f'/RenderView1_0.png')
-arr = np.array(im)
+
+arr   = np.array(im)
 shape = arr.shape
-size = arr.size
+size  = arr.size
 
+print(shape)
 
-X    = np.zeros((size, 10))
-Xpred = np.zeros((size, 10))
+N_SNAPSHOTS = 100
 
-for i in range(0, 10, 1):
+X     = np.zeros((size, N_SNAPSHOTS))
+#
+
+for i in range(0, N_SNAPSHOTS, 1):
     # print("i: %d\n" % i)
     im= Image.open(INPUT_DIR + f'/RenderView1_{i}.png')
     # Convert the image into an array
@@ -32,23 +35,26 @@ for i in range(0, 10, 1):
  
 dmd = DMD()
 dmd.fit(X)
+t = np.arange(0, N_SNAPSHOTS, 1)
+xDMD = dmd.predict(t)
 
 
-N,T = X.shape
 
-Xpred = np.zeros((N, T))
-Xpred[:, 0] = X[:, 0]
+# Xpred = np.zeros((N, T))
+# Xpred[:, 0] = X[:, 0]
 
-for t in range(1, T):
-    Xpred[:, t] = dmd.predict_future(t)
+# xDMD = dmd.predict(0)
+
+# for t in range(1, T):
+#     Xpred[:, t] = dmd.predict(t)
 
 # Salvar as imagens previstas
-for i in range(T):
-    arr_pred = Xpred[:, i].reshape(arr.shape)
+for i in range(0, N_SNAPSHOTS):
+    arr_pred = xDMD[:, i].reshape(shape)
     arr_pred = arr_pred.astype(np.uint8)
 
     img_pred = Image.fromarray(arr_pred)
-    img_pred.save('/home/breno/cfd-dmd/predicted_imgs' + f'/imagem_predita_{i}.png')
+    img_pred.save('/home/camata/git/cfd-dmd/predicted_imgs' + f'/imagem_predita_{i}.png')
 
 # dmd.plot_modes_2D(figsize=(12,5))
 

@@ -26,7 +26,7 @@ class DMD(object):
         self.X0 = X1[:,0]
 
         # Compute SVD of x (uu,ss,vv)
-        u,s,v = np.linalg.svd(X1)
+        u,s,v = np.linalg.svd(X1, full_matrices=False)
         q = np.cumsum(s) / np.sum(s)
         mask = q > thresh
         self.r = 2 # np.where(mask)[0][0]
@@ -35,42 +35,34 @@ class DMD(object):
         s_r   = np.diag(s[:self.r])
         v_r   = v[:self.r:, ].conj().transpose()
 
-        #np.disp(u_r.real);
-        #np.disp(s_r.real);   
-        #np.disp(v_r.real);
-
         s_inv = np.linalg.inv(s_r)
         # Compute Atilde
         self.A_tilde = u_r.T @ X2 @ v_r @ s_inv
 
-        # np.disp(self.A_tilde.real)
         
         self.lambda_ , self.W = np.linalg.eig(self.A_tilde)
 
-        # np.disp(self.lambda_.real)
-        # np.disp(self.W.real)
+
 
         self.phi = X2 @ v_r @ s_inv @ self.W
-
-        # np.disp(self.phi.real)
 
         self.b = np.linalg.pinv(self.phi) @ X1[:,0]
         self.omega = np.log(self.lambda_) / self.dt
 
-        np.disp(self.omega.real)
 
 
-    def predict_future(self, t):
-        pseudophix0 = np.linalg.pinv(self.phi) @ self.X0.reshape(-1, 1)
-        atphi = self.phi @ np.diag(self.lambda_ ** t)
-        xt = (atphi @ pseudophix0).reshape(-1)
-        return xt.real
+
+    # def predict_future(self, t):
+    #     pseudophix0 = np.linalg.pinv(self.phi) @ self.X0.reshape(-1, 1)
+    #     atphi = self.phi @ np.diag(self.lambda_ ** t)
+    #     xt = (atphi @ pseudophix0).reshape(-1)
+    #     return xt.real
     
     def predict(self, tvalues):
         time_dynamics = np.zeros((self.r, len(tvalues)), dtype=np.complex)
         for i, t in enumerate(tvalues):
             time_dynamics[:, i] = self.b * np.exp(self.omega * t)
         xDMD = self.phi @ time_dynamics
-        return xDMD
+        return xDMD.real
     
 
