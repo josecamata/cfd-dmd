@@ -59,7 +59,7 @@ class DMD(object):
     #     return xt.real
     
     def predict(self, tvalues):
-        time_dynamics = np.zeros((self.r, len(tvalues)), dtype=np.complex)
+        time_dynamics = np.zeros((self.r, len(tvalues)), dtype=complex)
         for i, t in enumerate(tvalues):
             time_dynamics[:, i] = self.b * np.exp(self.omega * t)
         xDMD = self.phi @ time_dynamics
