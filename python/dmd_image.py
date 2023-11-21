@@ -1,72 +1,69 @@
 import numpy as np
 from PIL import Image
-import scipy.io 
 import matplotlib.pyplot as plt
 from dmd_class import DMD
-# from pydmd import DMD
 
 INPUT_DIR = '/home/breno/cfd-dmd/pngs_bw'
 INPUT_DIR_PREDICTED = '/home/breno/cfd-dmd/predicted_imgs_1000'
-N_SNAPSHOTS = 1000
+INTERVALO_INICIAL = 3900
+INTERVALO_FINAL = 4000
+N_SNAPSHOTS = INTERVALO_FINAL - INTERVALO_INICIAL
 
-# im = Image.open(INPUT_DIR + f'/RenderView1_0.png')
+im = Image.open(INPUT_DIR + f'/RenderView1_{INTERVALO_INICIAL}.png')
 
-# arr   = np.array(im)
-# shape = arr.shape
-# size  = arr.size
+arr   = np.array(im)
+shape = arr.shape
+size  = arr.size
 
-# print(shape)
+X     = np.zeros((size, N_SNAPSHOTS))
 
-# X     = np.zeros((size, N_SNAPSHOTS))
-
-# for i in range(0, N_SNAPSHOTS, 1):
-#     im = Image.open(INPUT_DIR + f'/RenderView1_{i}.png')
-#     arr = np.array(im).reshape((size,1))
-#     X[:,i] = arr[:,0]
+for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
+    im = Image.open(INPUT_DIR + f'/RenderView1_{i}.png')
+    arr = np.array(im).reshape((size,1))
+    X[:, i - INTERVALO_INICIAL] = arr[:, 0]
  
-# dmd = DMD()
-# dmd.fit(X)
-# t = np.arange(0, N_SNAPSHOTS, 1)
-# xDMD = dmd.predict(t)
+dmd = DMD()
+dmd.fit(X)
+t = np.arange(0, N_SNAPSHOTS, 1)
+xDMD = dmd.predict(t)
 
 
-# # Xpred = np.zeros((N, T))
-# # Xpred[:, 0] = X[:, 0]
+# Xpred = np.zeros((N, T))
+# Xpred[:, 0] = X[:, 0]
 
-# # xDMD = dmd.predict(0)
+# xDMD = dmd.predict(0)
 
-# # for t in range(1, T):
-# #     Xpred[:, t] = dmd.predict(t)
+# for t in range(1, T):
+#     Xpred[:, t] = dmd.predict(t)
 
-# for i in range(0, N_SNAPSHOTS):
-#     arr_pred = xDMD[:, i].real.reshape(shape)
-#     arr_pred = arr_pred.astype(np.uint8)
+for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
+    arr_pred = xDMD[:, i - INTERVALO_INICIAL].real.reshape(shape)
+    arr_pred = arr_pred.astype(np.uint8)
 
-#     img_pred = Image.fromarray(arr_pred)
-#     img_pred.save('/home/breno/cfd-dmd/predicted_imgs_1000' + f'/imagem_predita_{i}.png')
+    img_pred = Image.fromarray(arr_pred)
+    img_pred.save(INPUT_DIR_PREDICTED + f'/imagem_predita_{i}.png')
 
-# Calculo do erro de Frobenius
 original_images = []
-for i in range(N_SNAPSHOTS):
+
+for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
     im = Image.open(INPUT_DIR + f'/RenderView1_{i}.png')
     arr = np.array(im)
     original_images.append(arr)
 
-# Calcular imagens previstas pela DMD
 predicted_images = []
-for i in range(N_SNAPSHOTS):
+
+for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
     im = Image.open(INPUT_DIR_PREDICTED + f'/imagem_predita_{i}.png')
     arr_pred = np.array(im)
     predicted_images.append(arr_pred)
 
-# Calcular o erro de Frobenius
 frobenius_errors = []
-for i in range(N_SNAPSHOTS):
-    error = np.linalg.norm(original_images[i] - predicted_images[i], 'fro')
+
+for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
+    error = np.linalg.norm(original_images[i - INTERVALO_INICIAL] - predicted_images[i - INTERVALO_INICIAL], 'fro') / np.linalg.norm(original_images[i - INTERVALO_INICIAL])
     frobenius_errors.append(error)
 
-# Plotar o erro de Frobenius ao longo do tempo
-plt.plot(range(N_SNAPSHOTS), frobenius_errors, label='Erro de Frobenius')
+plt.plot(range(INTERVALO_INICIAL, INTERVALO_FINAL), frobenius_errors, label='Erro de Frobenius')
 plt.xlabel('Tempo')
 plt.ylabel('Erro de Frobenius')
 plt.title('Erro de Frobenius entre imagens originais e previstas')
