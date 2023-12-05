@@ -27,7 +27,6 @@ dmd.fit(X)
 t = np.arange(0, N_SNAPSHOTS, 1)
 xDMD = dmd.predict(t)
 
-
 # Xpred = np.zeros((N, T))
 # Xpred[:, 0] = X[:, 0]
 
@@ -69,6 +68,19 @@ plt.ylabel('Erro de Frobenius')
 plt.title('Erro de Frobenius entre imagens originais e previstas')
 plt.legend()
 plt.show()
+
+original_images_strings = [np.array2string(img, separator=',') for img in original_images]
+with open("coordenadasOrigin.txt", "w") as arquivoO:
+    arquivoO.write('\n'.join(original_images_strings))
+
+# with open("coordenadasOrigin.txt", "w") as arquivoO:
+#     for img in original_images:
+#         for row in img:
+#             arquivoO.write(','.join(map(str, row.tolist())) + '\n')
+
+dmd_images_strings = [np.array2string(img, separator=',') for img in predicted_images]
+with open("coordenadasDMD.txt", "w") as arquivoO:
+    arquivoO.write('\n'.join(dmd_images_strings))
 
 # dmd.plot_modes_2D(figsize=(12,5))
 
