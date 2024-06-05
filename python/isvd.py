@@ -49,7 +49,7 @@
 
 import numpy as np
 
-class iSVD(object)
+class iSVD(object):
     def __init__(self):
         self.u1  = None
         self.W   = None
@@ -62,11 +62,10 @@ class iSVD(object)
   
     def Initialize(self, u1, tol=1e-10):
         self.u1 = u1
-        self.W = np.eye(u1.shape[0])
+        self.W  = np.eye(u1.shape[0])
         self.Q_0 = np.ones(u1.shape[0])
         self.S = np.sqrt(self.u1.T @ self.W @ self.u1)
-        inv_S  = np.linalg.inv(self.S)
-        self.Q = self.u1 @ inv_S
+        self.Q = self.u1 @ self.S**(-1)
         self.R = np.eye(1)
         self.tol = tol
         return self.Q, self.S, self.R
@@ -114,4 +113,32 @@ class iSVD(object)
             self.R = self.R @ Ry
         return self.Q, self.S, self.R
 
+# function [Q, S, R] = UpdateISVD3check(q,V,Q_0,Q,S,R)
+#     % input: Q m*k; S k*k; R l*k;
+#     k = size(S, 1);
+#     if q > 0
+#         Y = [S, cell2mat(V)];
+#         [Qy, Sy, Ry] = svd(Y, 'econ');
+        
+#         Q = Q*(Q_0*Qy); S = Sy; 
+#         R1 = Ry(1:k,:); R2 = Ry(k+1:end,:); 
+#         R = [R*R1; R2];
+#     else
+#         Q = Q * Q_0;
+#     end
+# end
 
+    def UpdateCheck(self):
+        k = self.S.shape[1]
+        if self.q > 0:
+            Y = np.concatenate((self.S, np.array(self.V)), axis=1)
+            Qy, Sy, Ry = np.linalg.svd(Y, full_matrices=False)
+            self.Q = self.Q @ (self.Q_0 @ Qy)
+            self.S = Sy
+            R1 = Ry[0:k, :]
+            R2 = Ry[k:, :]
+            R = np.concatenate((R @ R1, R2), axis=0)
+        else:
+            self.Q = self.Q @ self.Q_0
+        return self.Q, self.S, self.R
+    
