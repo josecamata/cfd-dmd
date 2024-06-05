@@ -16,7 +16,7 @@ class DMD(object):
         self.n_snapshots = None
         self.X0 = None
 
-    def fit(self, X, thresh=0.7,dt=1.0):
+    def fit(self, X, thresh=0.7,dt=1.0, rank=None):
 
         self.dt = dt
         self.n_points,self.n_snapshots = X.shape
@@ -27,9 +27,15 @@ class DMD(object):
 
         # Compute SVD of x (uu,ss,vv)
         u,s,v = np.linalg.svd(X1, full_matrices=False)
-        q = np.cumsum(s) / np.sum(s)
-        mask = q > thresh
-        self.r = 2 # np.where(mask)[0][0]
+
+        # Compute r
+        if rank is not None:
+            self.r = rank
+        else:
+            q = np.cumsum(s) / np.sum(s)
+            mask = q > thresh
+            self.r = np.where(mask)[0][0]
+
 
         u_r   = u[: , :self.r].conj()
         s_r   = np.diag(s[:self.r])
@@ -43,10 +49,10 @@ class DMD(object):
         self.lambda_ , self.W = np.linalg.eig(self.A_tilde)
 
 
-
         self.phi = X2 @ v_r @ s_inv @ self.W
 
         self.b = np.linalg.pinv(self.phi) @ X1[:,0]
+        
         self.omega = np.log(self.lambda_) / self.dt
 
 

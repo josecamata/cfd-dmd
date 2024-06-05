@@ -34,6 +34,9 @@ xDMD = dmd.predict(t)
 
 for i in range(PREDICT_INTERVAL_START, PREDICT_INTERVAL_END):
     arr_pred = xDMD[:, i - PREDICT_INTERVAL_START].real.reshape(shape)
+    #normalize
+    # arr_pred = (arr_pred - np.min(arr_pred)) / (np.max(arr_pred) - np.min(arr_pred)) * 255
+    # arr_pred = arr_pred/np.norm(arr_pred)
     arr_pred = arr_pred.astype(np.uint8)
 
     img_pred = Image.fromarray(arr_pred)
