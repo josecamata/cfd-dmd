@@ -12,42 +12,45 @@ total_time_points = 0
 for key in file_h5_predicted['/Function/u']:
     dataset = file_h5_predicted['/Function/u/' + key]
     column = dataset[:, 0]
+    print(np.linalg.norm(dataset[:, 0]))
     extracted_column.append(column)
     total_time_points += 1
 
-    # if total_time_points == 1000:
-    #     break
+    if total_time_points == 50:
+        break
 
 X = np.array(extracted_column).T
 shape = dataset.shape
 # print(X.shape)
 
 dmd = DMD()
-dmd.fit(X, dt=0.0025, thresh=1.0e-3)
+dmd.fit(X, dt=0.0025, thresh=1.0e-6)
 
 time_interval = 0.0025
 t_values = np.arange(0, total_time_points * time_interval, time_interval)
 predicted_data = dmd.predict(t_values)
+print(predicted_data)
 
 # Sobrescrever os dados preditos no arquivo HDF5
 for i, key in enumerate(file_h5_predicted['/Function/u']):
     dataset = file_h5_predicted['/Function/u/' + key]
     dataset[:, 0] = predicted_data[:, i]
+    # print(np.linalg.norm(predicted_data[:, i]))
 
 file_h5_predicted.close()
 
 # Calcular os erros de Frobenius entre os dados originais e previstos
-frobenius_errors = []
-for i in range(predicted_data.shape[1]):
-    original_data = X[:, i]
-    predicted_data_at_time = predicted_data[:, i]
-    error = np.linalg.norm(original_data - predicted_data_at_time) / np.linalg.norm(original_data)
-    frobenius_errors.append(error)
+# frobenius_errors = []
+# for i in range(predicted_data.shape[1]):
+#     original_data = X[:, i]
+#     predicted_data_at_time = predicted_data[:, i]
+#     error = np.linalg.norm(original_data - predicted_data_at_time) / np.linalg.norm(original_data)
+#     frobenius_errors.append(error)
 
-# Plotar os erros de Frobenius
-plt.plot(np.arange(0, total_time_points * time_interval, time_interval), frobenius_errors, label='Erro de Frobenius')
-plt.xlabel('Tempo')
-plt.ylabel('Erro de Frobenius')
-plt.title('Erro de Frobenius entre imagens originais e previstas')
-plt.legend()
-plt.show()
+# # Plotar os erros de Frobenius
+# plt.plot(np.arange(0, total_time_points * time_interval, time_interval), frobenius_errors, label='Erro de Frobenius')
+# plt.xlabel('Tempo')
+# plt.ylabel('Erro de Frobenius')
+# plt.title('Erro de Frobenius entre imagens originais e previstas')
+# plt.legend()
+# plt.show()
