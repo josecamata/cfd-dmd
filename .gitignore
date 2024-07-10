@@ -128,13 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+DATA.tar.xz
 DATA/*
-DATA/FLUIDS/CYLINDER_ALL.mat
-pngs/
-pngs_bw/
-python/*.png
-predicted_imgs/*.png
-
-*.h5
-*.xdmf 
-
+OUTPUT/*
+OUTPUT/sediment/*
+OUTPUT/cylinder/*

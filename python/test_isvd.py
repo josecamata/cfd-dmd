@@ -1,5 +1,5 @@
 import numpy as np
-from isvd import iSVD
+from python.utils.isvd import iSVD
 
 # U = rand(100,30)*rand(30,80); % low rank
 
