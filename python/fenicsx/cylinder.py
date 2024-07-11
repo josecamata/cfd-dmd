@@ -155,6 +155,8 @@ p_.name = "p"
 phi = Function(Q)
 
 f = Constant(mesh, PETSc.ScalarType((0,0)))
+# Define variational problem
+# du/dt + u . nabla(u) - div(sigma(u, p)) = f
 F1 = rho / k * dot(u - u_n, v) * dx 
 F1 += inner(dot(1.5 * u_n - 0.5 * u_n1, 0.5 * nabla_grad(u + u_n)), v) * dx
 F1 += 0.5 * mu * inner(grad(u + u_n), grad(v))*dx - dot(p_, div(v))*dx

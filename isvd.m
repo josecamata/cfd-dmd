@@ -1,7 +1,6 @@
 
 
 function [Q,S,R] = InitializeISVD(u1,W)
-
     S = (u1'* W *u1)^(1/2); % Num
     Q = u1 * S^(-1);        % m*1
     R = eye(1);

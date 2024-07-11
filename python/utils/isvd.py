@@ -61,13 +61,13 @@ class iSVD(object):
         self.V   = []
   
     def Initialize(self, u1, tol=1e-10):
-        self.u1 = u1
-        self.W  = np.eye(u1.shape[0])
-        self.Q_0 = np.ones(u1.shape[0])
-        self.S = np.sqrt(self.u1.T @ self.W @ self.u1)
-        self.Q = np.zeros((self.u1.shape[0], 1))
+        self.u1     = u1
+        self.W      = np.eye(u1.shape[0])
+        self.Q_0    = np.ones(u1.shape[0])
+        self.S      = np.sqrt(self.u1.T @ self.W @ self.u1)
+        self.Q      = np.zeros((self.u1.shape[0], 1))
         self.Q[:,0] = self.u1 * self.S**(-1)
-        self.R = np.eye(1)
+        self.R      = np.eye(1)
         self.tol = tol
         return self.Q, self.S, self.R
 
@@ -75,7 +75,7 @@ class iSVD(object):
         d = self.Q.T @ (self.W @ u_l_new)
         e = u_l_new - self.Q * d
         p = np.sqrt(e.T @ self.W @ e)
-        if sp < self.tol:
+        if p < self.tol:
             self.q = self.q + 1
             self.V.append(self.Q_0.T @ d)
         else:

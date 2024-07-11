@@ -6,50 +6,67 @@ from dmd_class import DMD
 ROOT_DIR = '/home/camata/git/cfd-dmd'
 
 path_h5  = ROOT_DIR + '/DATA/cylinder_xdmf/cylinder.h5'
-path_out = ROOT_DIR + '/OUTPUT/cylinder.h5'
 file_h5 = h5py.File(path_h5, 'r')
 
-extracted_column = []
-total_time_points = 0
-keys = []
 time_interval = 0.0025
-time = []
 t    = 0.0
 
+xy = file_h5['/Mesh/mesh/geometry']
+
+n_points = xy.shape[0]
+# get number of datasets
+n_times = len(file_h5['/Function/u'])
+
+print('Number of points:', n_points)
+print('Number of datasets:', n_times)
+
+u    = np.zeros((n_points, n_times))
+time = np.zeros(n_times)
+
+j = 0
 for key in file_h5['/Function/u']:
-    t += time_interval
+    # replace '_' by '.'
+    t_str = key.replace('_', '.')
+    # convert to float
+    t = float(t_str)
     dataset = file_h5['/Function/u/' + key]
-    column = dataset[:, 0]
-    if(total_time_points > 0):
-        extracted_column.append(column)
-        keys.append(key)
-        time.append(t)
-    total_time_points += 1
-    if total_time_points == 51:
-        break
+    u[:,j] = dataset[:, 0]
+    time[j] = t
+    j+=1
+
 
 # close file
-file_h5.close()
 
 
+INTERVALO_INICIAL   = 1
+INTERVALO_FINAL     = 3000
+N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
+PREDICT_INTERVAL_START = INTERVALO_FINAL
+PREDICT_LEN            = 0
+PREDICT_INTERVAL_END   = PREDICT_INTERVAL_START + PREDICT_LEN
 
-X = np.array(extracted_column).T
-print(X.shape)
+X = u[:,INTERVALO_INICIAL:INTERVALO_FINAL]
+
+print('Matriz de snapshots preenchida')
+print(' Shape:', X.shape)
 
 dmd = DMD()
-dmd.fit(X)
+dmd.fit(X,svd_rank=1.0E-7, dt=time_interval)
 
 # total_time_points = X.shape[1]
 # time_interval  = 0.0025
 # t_values       = np.arange(0, total_time_points * time_interval, time_interval)
-t_values = np.array(time)
+t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
+print("prtedicting from time ", t_values[0], " to ", t_values[-1])
 xDMD = dmd.predict(t_values)
 
-file_h5 = h5py.File(path_out, 'r+')
+print('DMD finalizado')
+print(' Shape:', xDMD.shape)
 
 errors_mse = []
 errors_inf = []
-for i in range(xDMD.shape[1]):
+for i in range(X.shape[1]):
+    #print(f'Processing time {t_values[i]}')
     original_data          = X[:, i]
     predicted_data_at_time = xDMD[:, i]
     diff = original_data - predicted_data_at_time
@@ -59,25 +76,47 @@ for i in range(xDMD.shape[1]):
     error_diff  = np.linalg.norm(diff,np.inf)
     error_tmp   = np.linalg.norm(original_data,np.inf)
     error = error_diff
-    print(f'Infty Norm Error at time {t_values[i]}: {error}')
-   
+    #print(f'Infty Norm Error at time {t_values[i]}: {error}')
     errors_mse.append(mse)
     errors_inf.append(error)
-    # update h5 dataset with predicted data
-    dataset = file_h5['/Function/u/' + keys[i]]
-    dataset[:, 0] = predicted_data_at_time
 
 
 # close file
 
-plt.plot(t_values, errors_mse, label='MSE')
-plt.xlabel('Time')
-plt.ylabel('MSE')
-plt.legend()
+# plt.plot(t_values, errors_mse, label='MSE')
+# plt.xlabel('Time')
+# plt.ylabel('MSE')
+# plt.legend()
+# plt.show()
+
+# plt.plot(t_values, errors_inf, label='Infty Norm')
+# plt.xlabel('Time')
+# plt.ylabel('Infty Norm Error')
+# plt.legend()
+# plt.show()
+
+t = xDMD.shape[1] - 1
+
+# Plot the velocity distribution of the flow field:
+x_true  = xy[:, 0]
+y_true  = xy[:, 1]
+u_true  = X[:, t]
+u_pred  = xDMD[:, t]
+fig, ax = plt.subplots(2, 1)
+cntr0   = ax[0].tricontourf(x_true, y_true, u_pred, levels=80, cmap="rainbow")
+cb0     = plt.colorbar(cntr0, ax=ax[0])
+cntr1   = ax[1].tricontourf(x_true, y_true, u_true, levels=80, cmap="rainbow")
+cb1     = plt.colorbar(cntr1, ax=ax[1])
+ax[0].set_title("u-DMD " + "(t=" + str(t_values[t]) + ")", fontsize=9.5)
+ax[0].axis("scaled")
+ax[0].set_xlabel("X", fontsize=7.5, family="Arial")
+ax[0].set_ylabel("Y", fontsize=7.5, family="Arial")
+ax[1].set_title("u-Reference solution " + "(t=" + str(t_values[t]) + ")", fontsize=9.5)
+ax[1].axis("scaled")
+ax[1].set_xlabel("X", fontsize=7.5, family="Arial")
+ax[1].set_ylabel("Y", fontsize=7.5, family="Arial")
+fig.tight_layout()
 plt.show()
 
-plt.plot(t_values, errors_inf, label='Infty Norm')
-plt.xlabel('Time')
-plt.ylabel('Infty Norm Error')
-plt.legend()
-plt.show()
+file_h5.close()
+

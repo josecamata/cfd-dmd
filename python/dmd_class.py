@@ -18,7 +18,7 @@ class DMD(object):
         self.n_snapshots = None
         self.X0          = None
 
-    def fit(self, X, thresh=0,dt=1.0, rank=0):
+    def fit(self, X, svd_rank=0,dt=1.0):
 
         self.dt = dt
         self.n_points,self.n_snapshots = X.shape
@@ -31,10 +31,7 @@ class DMD(object):
         u,s,v = np.linalg.svd(X1, full_matrices=False)
 
         # Compute r
-        if rank > 0:
-            self.r = rank
-        else:
-            self.r = self.compute_rank(s, X1.shape[0], X1.shape[1], thresh)
+        self.r = self.compute_rank(s, X1.shape[0], X1.shape[1], svd_rank)
 
         # Compute reduced SVD
         print(f'Using rank {self.r}')
