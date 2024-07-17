@@ -10,7 +10,7 @@ INTERVALO_INICIAL   = 3500
 INTERVALO_FINAL     = 4000
 N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
 PREDICT_INTERVAL_START = INTERVALO_FINAL
-PREDICT_LEN            = 0
+PREDICT_LEN            = 10
 PREDICT_INTERVAL_END   = PREDICT_INTERVAL_START + PREDICT_LEN
 
 im = Image.open(INPUT_DIR + f'/RenderView1_{INTERVALO_INICIAL}.png')
@@ -36,7 +36,7 @@ print(' Shape:', X.shape)
 time_step =  1
 # DMD
 dmd = DMD()
-dmd.fit(X,thresh=0,dt=time_step)
+dmd.fit(X,svd_rank=0, dt=time_step)
 t = np.arange(INTERVALO_INICIAL*time_step, time_step*INTERVALO_FINAL, time_step)
 
 xDMD = dmd.predict(t)

@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 
-ROOT_DIR    = '/home/camata/git/cfd-dmd'
+ROOT_DIR    = '/home/camata/git/cfd-dmd/'
 INPUT_DATA  = ROOT_DIR + 'DATA/cylinder_original_img'
 OUTPUT_DATA = ROOT_DIR + 'DATA/cylinder_cropped_bw'
 

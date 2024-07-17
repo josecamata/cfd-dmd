@@ -39,10 +39,10 @@ for key in file_h5['/Function/u']:
 
 
 INTERVALO_INICIAL   = 1
-INTERVALO_FINAL     = 3000
+INTERVALO_FINAL     = 100
 N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
 PREDICT_INTERVAL_START = INTERVALO_FINAL
-PREDICT_LEN            = 0
+PREDICT_LEN            = 10
 PREDICT_INTERVAL_END   = PREDICT_INTERVAL_START + PREDICT_LEN
 
 X = u[:,INTERVALO_INICIAL:INTERVALO_FINAL]
@@ -51,13 +51,13 @@ print('Matriz de snapshots preenchida')
 print(' Shape:', X.shape)
 
 dmd = DMD()
-dmd.fit(X,svd_rank=1.0E-7, dt=time_interval)
+dmd.fit(X,svd_rank=0.5,dt=time_interval)
 
 # total_time_points = X.shape[1]
 # time_interval  = 0.0025
 # t_values       = np.arange(0, total_time_points * time_interval, time_interval)
 t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
-print("prtedicting from time ", t_values[0], " to ", t_values[-1])
+print("predicted from time ", t_values[0], " to ", t_values[-1])
 xDMD = dmd.predict(t_values)
 
 print('DMD finalizado')

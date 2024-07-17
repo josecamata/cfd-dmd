@@ -3,7 +3,7 @@ from PIL import Image
 from dmd_class import DMD
 import matplotlib.pyplot as plt
 
-ROOT_DIR              = '/home/camata/git/cfd-dmd'
+ROOT_DIR              = '/home/camata/git/cfd-dmd/'
 INPUT_DIR              = ROOT_DIR + 'DATA/cylinder_cropped_bw'
 OUTPUT_DIR             = ROOT_DIR + 'OUTPUT/cylinder'
 INTERVALO_INICIAL      = 1500
@@ -28,7 +28,7 @@ for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
     j += 1
 
 dmd = DMD()
-dmd.fit(X,thresh=0,dt=0.0025)
+dmd.fit(X,svd_rank=0.1, dt=0.0025)
 t = np.arange(INTERVALO_INICIAL*0.0025, 0.0025*INTERVALO_FINAL, 0.0025)
 
 xDMD = dmd.predict(t)
