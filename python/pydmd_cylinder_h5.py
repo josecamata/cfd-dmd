@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-from dmd_class import DMD
+from pydmd import DMD
 
 
 ROOT_DIR = '/home/camata/git/cfd-dmd'
@@ -9,7 +9,7 @@ ROOT_DIR = '/home/camata/git/cfd-dmd'
 path_h5  = ROOT_DIR + '/DATA/cylinder_xdmf/cylinder.h5'
 file_h5 = h5py.File(path_h5, 'r')
 
-time_interval = 1
+time_interval = 0.0025
 t    = 0.0
 
 xy = file_h5['/Mesh/mesh/geometry']
@@ -52,14 +52,16 @@ print('Matriz de snapshots preenchida')
 print(' Shape:', X.shape)
 
 dmd = DMD()
-dmd.fit(X,svd_rank=0.5, dt=time_interval)
+dmd.fit(X)
+
 
 # total_time_points = X.shape[1]
 # time_interval  = 0.0025
 # t_values       = np.arange(0, total_time_points * time_interval, time_interval)
 t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
-print("predicted from time ", t_values[0], " to ", t_values[len(t_values)-1 ])
-xDMD = dmd.predict(t_values)
+print("predicted from time ", t_values[0], " to ", t_values[-1])
+xDMD = dmd.reconstructed_data.real
+
 
 print('DMD finalizado')
 print(' Shape:', xDMD.shape)
@@ -84,17 +86,17 @@ for i in range(X.shape[1]):
 
 # close file
 
-# plt.plot(t_values, errors_mse, label='MSE')
-# plt.xlabel('Time')
-# plt.ylabel('MSE')
-# plt.legend()
-# plt.show()
+plt.plot(t_values, errors_mse, label='MSE')
+plt.xlabel('Time')
+plt.ylabel('MSE')
+plt.legend()
+plt.show()
 
-# plt.plot(t_values, errors_inf, label='Infty Norm')
-# plt.xlabel('Time')
-# plt.ylabel('Infty Norm Error')
-# plt.legend()
-# plt.show()
+plt.plot(t_values, errors_inf, label='Infty Norm')
+plt.xlabel('Time')
+plt.ylabel('Infty Norm Error')
+plt.legend()
+plt.show()
 
 t = xDMD.shape[1] - 1
 

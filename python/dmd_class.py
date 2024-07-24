@@ -46,9 +46,11 @@ class DMD(object):
         self.A_tilde = u_r.T @ X2 @ v_r @ s_inv
         self.lambda_ , self.W = np.linalg.eig(self.A_tilde)
         self.phi = X2 @ v_r @ s_inv @ self.W
-        self.b = np.linalg.pinv(self.phi) @ X1[:,0]
+        self.b = np.linalg.pinv(self.phi) @ X1[:,0] # amplitude
         self.omega = np.log(self.lambda_) / self.dt
 
+    #TODO: verificar a implementação do predict no pydmd
+    #     e comparar com a implementação do dmd_class.py
     def predict(self, tvalues):
         time_dynamics = np.zeros((self.r, len(tvalues)), dtype=complex)
         for i, t in enumerate(tvalues):
