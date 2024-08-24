@@ -2,6 +2,8 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from pydmd import DMD
+from pydmd import RDMD
+
 
 
 ROOT_DIR = '/home/camata/git/cfd-dmd'
@@ -9,7 +11,7 @@ ROOT_DIR = '/home/camata/git/cfd-dmd'
 path_h5  = ROOT_DIR + '/DATA/cylinder_xdmf/cylinder.h5'
 file_h5 = h5py.File(path_h5, 'r')
 
-time_interval = 0.0025
+
 t    = 0.0
 
 xy = file_h5['/Mesh/mesh/geometry']
@@ -36,6 +38,7 @@ for key in file_h5['/Function/u']:
     j+=1
 
 
+time_interval = time[1] - time[0]
 # close file
 
 

@@ -37,10 +37,10 @@ for key in file_h5['/Function/u']:
 
 
 # close file
-
+time_interval = time[1] - time[0]
 
 INTERVALO_INICIAL   = 1
-INTERVALO_FINAL     = 250
+INTERVALO_FINAL     = 500
 N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
 PREDICT_INTERVAL_START = INTERVALO_FINAL
 PREDICT_LEN            = 10
@@ -51,13 +51,24 @@ X = u[:,INTERVALO_INICIAL:INTERVALO_FINAL]
 print('Matriz de snapshots preenchida')
 print(' Shape:', X.shape)
 
+
 dmd = DMD()
-dmd.fit(X,svd_rank=0.5, dt=time_interval)
+dmd.parameters["time_interval"]        = time_interval
+dmd.parameters["svd_type"]              = "rsvd"
+dmd.parameters["rsvd_base_vector_size"] = 500
+dmd.parameters["rsvd_oversampling"]=100
+dmd.parameters["rsvd_power_iters"] = 5
+
+dmd.fit(X,svd_rank=1, dt=time_interval)
 
 # total_time_points = X.shape[1]
-# time_interval  = 0.0025
+
 # t_values       = np.arange(0, total_time_points * time_interval, time_interval)
-t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
+# t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
+t_values = (
+            np.arange(start=INTERVALO_INICIAL, stop=INTERVALO_FINAL)
+            * time_interval
+          )
 print("predicted from time ", t_values[0], " to ", t_values[len(t_values)-1 ])
 xDMD = dmd.predict(t_values)
 
@@ -82,19 +93,6 @@ for i in range(X.shape[1]):
     errors_inf.append(error)
 
 
-# close file
-
-# plt.plot(t_values, errors_mse, label='MSE')
-# plt.xlabel('Time')
-# plt.ylabel('MSE')
-# plt.legend()
-# plt.show()
-
-# plt.plot(t_values, errors_inf, label='Infty Norm')
-# plt.xlabel('Time')
-# plt.ylabel('Infty Norm Error')
-# plt.legend()
-# plt.show()
 
 t = xDMD.shape[1] - 1
 
