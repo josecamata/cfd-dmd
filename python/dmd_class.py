@@ -12,7 +12,7 @@ class DMD(object):
         self.eigvalues   = None
         self.b           = None
         self.omega       = None
-        self.eigvectors   = None
+        self.eigvectors  = None
         self.n_points    = None
         self.n_snapshots = None
         self.X0          = None
@@ -22,16 +22,19 @@ class DMD(object):
         self.parameters["rsvd_oversampling"]     = 20
         self.parameters["rsvd_power_iters"]      = 2
         self.parameters["rsvd_seed"]             = 1
-        self.parameters["time_interval"]         = 1
-        self.parameters["start_snapshot"]        = 0
-        self.parameters["end_snapshot"]          = 0
+        self.parameters["dt"]            = 1
+        self.parameters["t0"]            = 0
+        self.parameters["tend"]          = 0
   
     
 
-    def compute_svd(self, mat):
+    def compute_svd(self, mat, svd_rank):
+
+        self.r  = self.compute_rank(mat,svd_rank)
+
         if(self.parameters["svd_type"] == "svd"):
             print("Using SVD factorization\n")
-            [u,s,v] = np.linalg.svd(mat,full_matrices=False, compute_uv=True, hermitian=False)
+            [U,s,V] = np.linalg.svd(mat,full_matrices=False, compute_uv=True, hermitian=False)
         else:
             print("Using rSVD factorization\n")
             m                = mat.shape[1]
@@ -48,52 +51,49 @@ class DMD(object):
                 Q, _ = np.linalg.qr(mat @ Z)
 
             B = Q.T @ mat
-            [u_tilde, s, v] = np.linalg.svd(B,full_matrices=False)
-            u = Q @ u_tilde
-        return u,s,v
+            [U_tilde, s, V] = np.linalg.svd(B,full_matrices=False)
+            U = Q @ U_tilde
 
-    def fit(self, X, svd_rank=0,dt=1.0):
+        V = V.conj().T
 
-        self.dt = dt
+        U = U[:, :self.r]
+        V = V[:, :self.r]
+        s = s[:self.r]
+
+        return U, s, V
+
+    def fit(self, X, svd_rank=0):
+
         self.n_points,self.n_snapshots = X.shape
 
-        self.parameters["end_snapshot"] = self.n_snapshots
+        self.parameters["tend"] = self.n_snapshots
+        dt = self.parameters["dt"]
 
         X1 = X[:,:-1] 
         X2 = X[:, 1:]
         self.X0 = X1[:,0]
 
         # Compute SVD of x (uu,ss,vv)
-        u,s,v = self.compute_svd(X1)
+        U,s,V = self.compute_svd(X1, svd_rank)
         
-        # Compute r
-        self.r = self.compute_rank(s, X1.shape[0], X1.shape[1], svd_rank)
-
-        # Compute reduced SVD
-        print(f'Using rank {self.r}')
-
-        u_r   = np.transpose(u[: , 0:self.r])
-        s_r   = s[0:self.r]
-        s_r   = np.divide(1.0, s_r)
-        s_r   = np.diag(s_r)
-        v_r   = np.transpose(v[0:self.r:, ])
 
         # Compute Atilde
-        self.A_tilde = np.linalg.multi_dot([u_r,X2,v_r,s_r]);
+        #self.A_tilde = np.linalg.multi_dot([u_r,X2,v_r,s_r]);
+        self.A_tilde = np.linalg.multi_dot([U.T.conj(), X2, V]) * np.reciprocal(s)
 
         self.eigvalues , self.eigvectors = np.linalg.eig(self.A_tilde)
 
         # self.phi = X2 @ v_r @ s_r @ self.W
-
-        self.phi = np.linalg.multi_dot([X2 , v_r , s_r , self.eigvectors])
+        self.phi = (X2.dot(V) * np.reciprocal(s)).dot(self.eigvectors)
+        #self.phi = np.linalg.multi_dot([X2 , V , s_r , self.eigvectors])
 
         self.b = np.linalg.pinv(self.phi) @ self.X0 # amplitude
+        #self.b = np.linalg.lstsq(self.phi,self.X0.T, rcond=None )[0]
         self.b = self.b[:,np.newaxis]
-        self.omega = np.log(self.eigvalues) / (self.dt )
+        self.omega = np.log(self.eigvalues) / ( dt )
         self.omega = self.omega[:, np.newaxis]
 
-    #TODO: verificar a implementação do predict no pydmd
-    #     e comparar com a implementação do dmd_class.py
+
     def predict(self, tvalues):
         tvalues = tvalues[np.newaxis,:]
         temp = np.multiply(self.omega, tvalues)
@@ -102,58 +102,69 @@ class DMD(object):
         xDMD = np.dot(self.phi,time_dynamics)
         return xDMD.real
     
+    def reconstructed_data(self):
+        t_values = self.dmd_timesteps()
+        t_values = t_values[np.newaxis,:]
+        temp     = np.multiply(self.omega, t_values)
+        temp     = np.exp(temp)
+        time_dynamics = np.multiply(self.b, temp)
+        xDMD          = np.dot(self.phi,time_dynamics)
+        return xDMD.real
 
-    def svht(self,sigma_svd: np.ndarray, rows: int, cols: int) -> int:
+    def dmd_timesteps(self):
         """
-        Singular Value Hard Threshold.
+        Get the timesteps of the reconstructed states.
 
-        :param sigma_svd: Singual values computed by SVD
-        :type sigma_svd: np.ndarray
-        :param rows: Number of rows of original data matrix.
-        :type rows: int
-        :param cols: Number of columns of original data matrix.
-        :type cols: int
-        :return: Computed rank.
+        :return: the time intervals of the original snapshots.
+        :rtype: numpy.ndarray
+        """
+        return np.arange(
+            self.parameters["t0"],
+            self.parameters["tend"],
+            self.parameters["dt"],
+        )
+
+    def compute_rank(self, X, svd_rank=0):
+        """
+        Rank computation for the truncated Singular Value Decomposition.
+        :param numpy.ndarray X: the matrix to decompose.
+        :param svd_rank: the rank for the truncation; If 0, the method computes
+            the optimal rank and uses it for truncation; if positive interger,
+            the method uses the argument for the truncation; if float between 0
+            and 1, the rank is the number of the biggest singular values that
+            are needed to reach the 'energy' specified by `svd_rank`; if -1,
+            the method does not compute truncation. Default is 0.
+        :type svd_rank: int or float
+        :return: the computed rank truncation.
         :rtype: int
-
-        References:
-        Gavish, Matan, and David L. Donoho, The optimal hard threshold for
-        singular values is, IEEE Transactions on Information Theory 60.8
-        (2014): 5040-5053.
-        https://ieeexplore.ieee.org/document/6846297
-        """
-        beta  = np.divide(*sorted((rows, cols)))
-        omega = 0.56 * beta**3 - 0.95 * beta**2 + 1.82 * beta + 1.43
-        tau  = np.median(sigma_svd) * omega
-        rank = np.sum(sigma_svd > tau)
-
-        if rank == 0:
-            warnings.warn(
-                "SVD optimal rank is 0. The largest singular values are "
-                "indistinguishable from noise. Setting rank truncation to 1.",
-                RuntimeWarning,
-            )
-            rank = 1
-
-        return rank
-
-    def compute_rank(self, s: np.ndarray, rows: Number, cols: Number, svd_rank: Number = 0) -> int:
-        """
         References:
         Gavish, Matan, and David L. Donoho, The optimal hard threshold for
         singular values is, IEEE Transactions on Information Theory 60.8
         (2014): 5040-5053.
         """
+        U, s, _ = np.linalg.svd(X, full_matrices=False)
+
+        def omega(x):
+            return 0.56 * x**3 - 0.95 * x**2 + 1.82 * x + 1.43
+
         if svd_rank == 0:
-            rank = self.svht(s, rows, cols)
+            beta = np.divide(*sorted(X.shape))
+            tau = np.median(s) * omega(beta)
+            rank = np.sum(s > tau)
+            if rank == 0:
+                warnings.warn(
+                    "SVD optimal rank is 0. The largest singular values are "
+                    "indistinguishable from noise. Setting rank truncation to 1.",
+                    RuntimeWarning,
+                )
+                rank = 1
         elif 0 < svd_rank < 1:
             cumulative_energy = np.cumsum(s**2 / (s**2).sum())
             rank = np.searchsorted(cumulative_energy, svd_rank) + 1
         elif svd_rank >= 1 and isinstance(svd_rank, int):
-            rank = min(svd_rank, s.size)
+            rank = min(svd_rank, U.shape[1])
         else:
-            rank = min(rows, cols)
+            rank = min(X.shape)
 
         return rank
-        
 

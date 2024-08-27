@@ -35,12 +35,11 @@ for key in file_h5['/Function/u']:
     time[j] = t
     j+=1
 
-
 # close file
-time_interval = time[1] - time[0]
+time_interval = 0.0025
 
 INTERVALO_INICIAL   = 1
-INTERVALO_FINAL     = 500
+INTERVALO_FINAL     = 250
 N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
 PREDICT_INTERVAL_START = INTERVALO_FINAL
 PREDICT_LEN            = 10
@@ -51,26 +50,24 @@ X = u[:,INTERVALO_INICIAL:INTERVALO_FINAL]
 print('Matriz de snapshots preenchida')
 print(' Shape:', X.shape)
 
-
+print("Time interval = %.2f" % time_interval)
 dmd = DMD()
-dmd.parameters["time_interval"]        = time_interval
-dmd.parameters["svd_type"]              = "rsvd"
+dmd.parameters["svd_type"]              = "svd"
 dmd.parameters["rsvd_base_vector_size"] = 500
-dmd.parameters["rsvd_oversampling"]=100
-dmd.parameters["rsvd_power_iters"] = 5
+dmd.parameters["rsvd_oversampling"]     = 100
+dmd.parameters["rsvd_power_iters"]      = 5
 
-dmd.fit(X,svd_rank=1, dt=time_interval)
+dmd.fit(X,svd_rank=0)
 
 # total_time_points = X.shape[1]
 
 # t_values       = np.arange(0, total_time_points * time_interval, time_interval)
-# t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
-t_values = (
-            np.arange(start=INTERVALO_INICIAL, stop=INTERVALO_FINAL)
-            * time_interval
-          )
-print("predicted from time ", t_values[0], " to ", t_values[len(t_values)-1 ])
-xDMD = dmd.predict(t_values)
+t_values = time[INTERVALO_INICIAL:INTERVALO_FINAL]
+
+# print("predicted from time ", t_values[0], " to ", t_values[len(t_values)-1 ])
+# xDMD = dmd.predict(t_values)
+
+xDMD = dmd.reconstructed_data()
 
 print('DMD finalizado')
 print(' Shape:', xDMD.shape)
