@@ -166,5 +166,6 @@ class DMD(object):
         else:
             rank = min(X.shape)
 
+        print(f"Rank truncation: {rank}")
         return rank
 

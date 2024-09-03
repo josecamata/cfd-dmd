@@ -54,7 +54,7 @@ X = u[:,INTERVALO_INICIAL:INTERVALO_FINAL]
 print('Matriz de snapshots preenchida')
 print(' Shape:', X.shape)
 
-dmd = DMD(svd_rank=0)
+dmd = DMD(svd_rank=1)
 dmd.fit(X)
 
 

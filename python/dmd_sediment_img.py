@@ -3,11 +3,11 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from dmd_class import DMD
 
-ROOT_DIR            = '/home/camata/git/cfd-dmd'
+ROOT_DIR             = '/home/camata/git/cfd-dmd'
 INPUT_DIR            = ROOT_DIR+'/DATA/sediment_cropped_bw'
 OUTPUT_DIR_PREDICTED = ROOT_DIR+'/OUTPUT/sediment'
-INTERVALO_INICIAL   = 3500
-INTERVALO_FINAL     = 4000
+INTERVALO_INICIAL   = 2500
+INTERVALO_FINAL     = 2750
 N_SNAPSHOTS         = INTERVALO_FINAL - INTERVALO_INICIAL
 PREDICT_INTERVAL_START = INTERVALO_FINAL
 PREDICT_LEN            = 10
@@ -36,7 +36,13 @@ print(' Shape:', X.shape)
 time_step =  1
 # DMD
 dmd = DMD()
-dmd.fit(X,svd_rank=0, dt=time_step)
+dmd.parameters["time_interval"]         = 1
+dmd.parameters["svd_type"]              = "svd"
+dmd.parameters["rsvd_base_vector_size"] = 200
+dmd.parameters["rsvd_oversampling"]     = 100
+dmd.parameters["rsvd_power_iters"]      = 5
+
+dmd.fit(X,svd_rank=0)
 t = np.arange(INTERVALO_INICIAL*time_step, time_step*INTERVALO_FINAL, time_step)
 
 xDMD = dmd.predict(t)
@@ -48,26 +54,32 @@ print(' Shape:', xDMD.shape)
 # calculando o erro de Frobenius
 
 relative_errors = []
+mse_errors      = [] 
 
 j = 0
 for i in range(INTERVALO_INICIAL, INTERVALO_FINAL):
     arr_pred = xDMD[:, j].real.reshape(shape)
     arr_pred = arr_pred.astype(np.uint8)
 
+    # compute frobenius error
+    
     img_pred = Image.fromarray(arr_pred)
     img_pred.save(OUTPUT_DIR_PREDICTED + f'/imagem_predita_{str(i).zfill(5)}.png')
 
-    #error = np.linalg.norm(X[:,j] - xDMD[:,j]) / np.linalg.norm(X[:,j])
+    error = np.linalg.norm(X[:,j] - xDMD[:,j]) / np.linalg.norm(X[:,j])
     # compute mse
     diff = X[:, j] - xDMD[:, j]
-    mse = np.sum(diff**2) / diff.size
-    relative_errors.append(mse)
+    mse  = np.sum(diff**2) / diff.size
+    relative_errors.append(error)
+
+    mse_errors.append(mse)
+
     j += 1
 
 # plot log y scale  
-plt.plot(t, relative_errors, label='MSE')
+plt.plot(t, relative_errors, label='L2-norm relative error')
 plt.xlabel('Time')
-plt.ylabel('MSE')
+plt.ylabel('L2-norm relative error')
 plt.legend()
 plt.show()
 
